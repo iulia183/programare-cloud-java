@@ -1,6 +1,8 @@
 package com.unitbv.events.service;
 
+import com.unitbv.events.event.CarForRentEvent;
 import com.unitbv.events.model.Car;
+import lombok.val;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
@@ -13,8 +15,11 @@ public class PersonService {
         this.eventPublisher = eventPublisher;
     }
 
+
     public void rentCar(String model) {
         final Car car = new Car(model);
-        //create a new event and publish car on event
+        val event = new CarForRentEvent(car, this);
+
+        eventPublisher.publishEvent(event);
     }
 }
