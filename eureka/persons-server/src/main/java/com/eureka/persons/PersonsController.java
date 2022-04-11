@@ -1,5 +1,6 @@
 package com.eureka.persons;
 
+import com.eureka.persons.ex.NotFoundException;
 import com.eureka.persons.person.Person;
 import com.eureka.persons.services.PersonService;
 import org.springframework.http.HttpStatus;
@@ -7,6 +8,8 @@ import org.springframework.http.MediaType;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Optional;
+import java.util.Comparator;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,9 +27,13 @@ public class PersonsController {
      */
     //TODO find all persons using the functions already implemented and sort them by id
     @ResponseStatus(HttpStatus.OK)
-    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE, value = "/all")
     public List<Person> list() {
-        return new ArrayList<>();
+
+        ArrayList<Person> personArrayList = new ArrayList<>();
+        personArrayList.addAll(personService.findAll());
+        personArrayList.sort(Comparator.comparing(Person::getId));
+        return personArrayList;
     }
 
     /**
@@ -34,8 +41,14 @@ public class PersonsController {
      */
     //TODO save a person to the db or throw PersonsException
     @ResponseStatus(HttpStatus.CREATED)
-    @PostMapping
+    @PostMapping(value = "/created")
     public void create(@RequestBody Person person, BindingResult result) {
+        if(!result.hasErrors()){
+            personService.save(person);
+        }
+        else{
+            throw new PersonsException(HttpStatus.BAD_REQUEST, "this person can not pe added");
+        }
     }
 
     /**
@@ -48,7 +61,8 @@ public class PersonsController {
     @ResponseStatus(HttpStatus.OK)
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public Person show(@PathVariable Long id) {
-        return new Person();
+
+        return personService.findById(id).orElseThrow(()->new NotFoundException(Person.class,id));
     }
 
     /**
@@ -73,5 +87,6 @@ public class PersonsController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
+        personService.delete(personService.findById(id).orElseThrow(()->new NotFoundException(Person.class,id)));
     }
 }
